@@ -39,12 +39,17 @@ def main():
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--use-cuda",
+        action="store_true",
+        help="Run Piper's onnxruntime session on GPU (requires onnxruntime-gpu installed).",
+    )
     args = parser.parse_args()
 
     sentences = load_sentences(SENTENCES_PATH, args.limit)
     print(f"Loaded {len(sentences)} sentences from {SENTENCES_PATH}")
 
-    voice = PiperVoice.load(args.model, args.config)
+    voice = PiperVoice.load(args.model, args.config, use_cuda=args.use_cuda)
     AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
     skipped, synthesized = 0, 0
