@@ -49,3 +49,20 @@ class DecoderConfig:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         return cls(**data)
+
+
+@dataclass
+class TargetMelConfig:
+    """Mel extraction settings for the Stage 2 target (Piper) audio."""
+
+    sample_rate: int = 22050
+    n_mels: int = 80
+    n_fft: int = 1024
+    win_length: int = 1024
+    hop_length: int = 256
+
+    @classmethod
+    def from_yaml(cls, path: str) -> "TargetMelConfig":
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        return cls(**data)

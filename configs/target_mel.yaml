@@ -1,0 +1,6 @@
+# Mel extraction settings for Stage 2 target (Piper) audio: 22050Hz mono.
+sample_rate: 22050
+n_mels: 80
+n_fft: 1024
+win_length: 1024
+hop_length: 256
