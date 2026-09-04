@@ -7,3 +7,4 @@ soundfile
 pyyaml
 datasets
 piper-tts
+tqdm
