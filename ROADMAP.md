@@ -13,7 +13,8 @@ directly — it's not just a Claude-side plan.
 ## Status
 
 Stage 1 (audio encoder) and Stage 2 (dataset: 1500 sentence/audio/hidden-state
-triples) are done. Stage 3 (train the hidden-state → audio decoder) is next.
+triples) are done. Stage 3 decoder architecture is done and smoke-tested;
+training script is next, then the user runs training.
 
 ## Stage 1 — Audio
 
@@ -70,8 +71,22 @@ normal text mode to get hidden states, and Piper to get target audio.
 
 ## Stage 3 — Train and verify
 
-- [ ] Train the hidden-state → audio decoder (small, ~10M param,
-      English-only transformer, per the earlier module) on the Stage 2
-      dataset
-- [ ] Verify: run held-out hidden states through the trained decoder and
-      check the output audio is correct/intelligible
+Architecture: non-autoregressive, FastSpeech-style. `src/aether/decoder/model.py`
+(`HiddenStateToMelDecoder`, `configs/decoder.yaml`, 10.6M params):
+text-side transformer encodes Qwen's hidden states → length predictor
+estimates mel frame count → length regulator stretches the sequence via
+linear interpolation (no per-token alignment exists between Qwen's BPE
+tokens and audio frames) → mel-side transformer decodes to a log-mel
+spectrogram. Verified with `scripts/smoke_test_decoder.py` on real
+dataset examples (teacher-forced and predicted-length forward passes
+both run, shapes check out; length predictor is untrained so its output
+is meaningless until trained).
+
+- [x] Decoder architecture (`src/aether/decoder/model.py` +
+      `configs/decoder.yaml`)
+- [ ] Training script (mel L1 loss + length-predictor log-length loss,
+      loops one example at a time over the Stage 2 dataset)
+- [ ] Train (on GPU, run by the user)
+- [ ] Verify: run held-out hidden states through the trained decoder,
+      convert predicted mel to audio (e.g. Griffin-Lim), check it's
+      correct/intelligible
