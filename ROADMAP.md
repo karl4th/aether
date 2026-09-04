@@ -13,8 +13,8 @@ directly — it's not just a Claude-side plan.
 ## Status
 
 Stage 1 (audio encoder) and Stage 2 (dataset: 1500 sentence/audio/hidden-state
-triples) are done. Stage 3 decoder architecture is done and smoke-tested;
-training script is next, then the user runs training.
+triples) are done. Stage 3 architecture + training script are done and
+dry-run tested. Next: user runs the real training, then verify output audio.
 
 ## Stage 1 — Audio
 
@@ -84,9 +84,12 @@ is meaningless until trained).
 
 - [x] Decoder architecture (`src/aether/decoder/model.py` +
       `configs/decoder.yaml`)
-- [ ] Training script (mel L1 loss + length-predictor log-length loss,
-      loops one example at a time over the Stage 2 dataset)
-- [ ] Train (on GPU, run by the user)
+- [x] Training script `scripts/train_decoder.py` (mel L1 loss +
+      length-predictor log-length loss, loops one example at a time,
+      95/1400 train/val split, checkpoints to `checkpoints/decoder/`).
+      1-epoch dry run passed (train mel 2.70, val mel 2.65, no errors).
+- [ ] Train (on GPU, run by the user): `uv run python scripts/train_decoder.py`
+- [ ] Watch train/val mel loss to pick a good epoch count / spot overfitting
 - [ ] Verify: run held-out hidden states through the trained decoder,
       convert predicted mel to audio (e.g. Griffin-Lim), check it's
       correct/intelligible
