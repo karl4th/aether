@@ -28,3 +28,24 @@ class AudioEncoderConfig:
         with open(path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         return cls(**data)
+
+
+@dataclass
+class DecoderConfig:
+    """Hidden state (Qwen) -> mel spectrogram decoder, Stage 3."""
+
+    qwen_hidden_size: int = 2048
+    n_mels: int = 80
+
+    d_model: int = 320
+    num_text_encoder_layers: int = 4
+    num_mel_decoder_layers: int = 4
+    num_heads: int = 4
+    ffn_dim: int = 1280
+    dropout: float = 0.1
+
+    @classmethod
+    def from_yaml(cls, path: str) -> "DecoderConfig":
+        with open(path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        return cls(**data)
