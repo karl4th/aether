@@ -88,6 +88,14 @@ def main():
     parser.add_argument("--val-size", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--checkpoint-every", type=int, default=5)
+    parser.add_argument(
+        "--lr-patience",
+        type=int,
+        default=3,
+        help="Epochs with no val mel improvement before reducing LR.",
+    )
+    parser.add_argument("--lr-factor", type=float, default=0.5)
+    parser.add_argument("--min-lr", type=float, default=1e-6)
     args = parser.parse_args()
 
     set_seed(args.seed)
@@ -119,6 +127,13 @@ def main():
     optimizer = torch.optim.AdamW(
         decoder.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        factor=args.lr_factor,
+        patience=args.lr_patience,
+        min_lr=args.min_lr,
+    )
 
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
     best_val_mel_loss = float("inf")
@@ -131,11 +146,18 @@ def main():
             decoder, val_loader, device, args.length_loss_weight, optimizer=None
         )
 
+        prev_lr = optimizer.param_groups[0]["lr"]
+        scheduler.step(val_mel_loss)
+        current_lr = optimizer.param_groups[0]["lr"]
+
         print(
             f"Epoch {epoch}/{args.epochs} | "
             f"train mel {train_mel_loss:.4f} len {train_length_loss:.4f} | "
-            f"val mel {val_mel_loss:.4f} len {val_length_loss:.4f}"
+            f"val mel {val_mel_loss:.4f} len {val_length_loss:.4f} | "
+            f"lr {current_lr:.2e}"
         )
+        if current_lr < prev_lr:
+            print(f"  Reduced LR: {prev_lr:.2e} -> {current_lr:.2e}")
 
         if val_mel_loss < best_val_mel_loss:
             best_val_mel_loss = val_mel_loss
