@@ -12,10 +12,8 @@ directly — it's not just a Claude-side plan.
 
 ## Status
 
-Stage 1 encoder implemented and verified end-to-end through real
-Qwen3-1.7B weights (`--with-qwen`): dummy audio → encoder →
-`inputs_embeds` → Qwen forward pass → hidden states `(2, 61, 2048)`,
-matches expected shape. Stage 2 next.
+Stage 1 (audio encoder) and Stage 2 (dataset: 1500 sentence/audio/hidden-state
+triples) are done. Stage 3 (train the hidden-state → audio decoder) is next.
 
 ## Stage 1 — Audio
 
@@ -58,13 +56,17 @@ Method:
 This does not depend on Stage 1's audio encoder — it uses Qwen in its
 normal text mode to get hidden states, and Piper to get target audio.
 
-- [ ] `scripts/build_sentences.py` — pull/filter/sample sentences from
-      `wikitext-2-raw-v1`
-- [ ] `scripts/synthesize_tts.py` — Piper: sentence → target audio (.wav)
-- [ ] `scripts/extract_hidden_states.py` — Qwen3-1.7B: sentence text →
-      last-layer hidden state sequence (.pt)
-- [ ] `data/dataset/manifest.jsonl` (or similar) tying sentence id → audio
-      path → hidden state path
+- [x] `scripts/build_sentences.py` — pull/filter/sample sentences from
+      `wikitext-2-raw-v1`. 1500 sentences generated to
+      `data/dataset/sentences.jsonl`.
+- [x] `scripts/synthesize_tts.py` — Piper (`en_US-lessac-medium`, 22050Hz):
+      sentence → target audio. 1500 wavs in `data/dataset/audio/{id}.wav`.
+- [x] `scripts/extract_hidden_states.py` — Qwen3-1.7B (GPU): sentence text
+      → last-layer hidden state sequence. 1500 tensors in
+      `data/dataset/hidden_states/{id}.pt`, shape `(seq_len, 2048)`.
+- [x] No separate manifest file needed — `sentences.jsonl`'s `id` field
+      derives both paths by convention
+      (`data/dataset/audio/{id}.wav`, `data/dataset/hidden_states/{id}.pt`).
 
 ## Stage 3 — Train and verify
 
