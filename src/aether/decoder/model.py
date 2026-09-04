@@ -96,7 +96,11 @@ class HiddenStateToMelDecoder(nn.Module):
         if target_mel_len is not None:
             mel_len = target_mel_len
         else:
-            mel_len = max(1, round(torch.exp(log_length_pred).item()))
+            # Floor at 8 frames: below this, downstream mel->waveform
+            # inversion (Griffin-Lim needs mel_len * hop_length >= n_fft)
+            # breaks. Only matters for a degenerate/undertrained predictor;
+            # real utterances are always far longer.
+            mel_len = max(8, round(torch.exp(log_length_pred).item()))
 
         x = self.length_regulator(x, mel_len)  # (mel_len, d_model)
         x = self.mel_decoder(x.unsqueeze(0)).squeeze(0)  # (mel_len, d_model)
