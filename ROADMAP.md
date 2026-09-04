@@ -12,8 +12,10 @@ directly — it's not just a Claude-side plan.
 
 ## Status
 
-Stage 1 encoder implemented and smoke-tested (dummy audio only, not yet
-verified against real Qwen3-1.7B weights). Stage 2 next.
+Stage 1 encoder implemented and verified end-to-end through real
+Qwen3-1.7B weights (`--with-qwen`): dummy audio → encoder →
+`inputs_embeds` → Qwen forward pass → hidden states `(2, 61, 2048)`,
+matches expected shape. Stage 2 next.
 
 ## Stage 1 — Audio
 
