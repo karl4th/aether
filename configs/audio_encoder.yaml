@@ -1,0 +1,24 @@
+# Stage 1 audio input encoder hyperparameters
+sample_rate: 16000
+n_mels: 80
+n_fft: 800
+win_length: 800
+hop_length: 200
+
+# Conv1D downsampling stem: each entry is (out_channels, kernel_size, stride)
+conv_layers:
+  - [128, 5, 2]
+  - [256, 5, 2]
+
+# Transformer encoder over the downsampled frames
+d_model: 256
+num_layers: 4
+num_heads: 4
+ffn_dim: 1024
+dropout: 0.1
+
+# Output projection target. Should match the loaded Qwen model's
+# hidden_size (see AutoConfig.from_pretrained("Qwen/Qwen3-1.7B").hidden_size).
+# Kept as an explicit value here so the encoder can be built standalone;
+# scripts/smoke_test_audio_encoder.py cross-checks it against the real model.
+qwen_hidden_size: 2048

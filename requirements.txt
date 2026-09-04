@@ -4,3 +4,4 @@ accelerate
 torchaudio
 numpy
 soundfile
+pyyaml
