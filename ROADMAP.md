@@ -12,7 +12,8 @@ directly — it's not just a Claude-side plan.
 
 ## Status
 
-Stage 1 in progress.
+Stage 1 encoder implemented and smoke-tested (dummy audio only, not yet
+verified against real Qwen3-1.7B weights). Stage 2 next.
 
 ## Stage 1 — Audio
 
@@ -24,14 +25,15 @@ Design: waveform (16kHz, mono) → log-mel spectrogram → Conv1D downsampling
 stem → small Transformer encoder (~5-15M params) → linear projection to
 Qwen's `hidden_size`. English-only for now.
 
-- [ ] `src/aether/audio/mel.py` — waveform → log-mel spectrogram
-- [ ] `src/aether/audio/encoder.py` — `AudioEncoder` module (conv stem +
-      transformer + projection)
-- [ ] `src/aether/config.py` + `configs/audio_encoder.yaml` — encoder
+- [x] `src/aether/audio/mel.py` — waveform → log-mel spectrogram
+- [x] `src/aether/audio/encoder.py` — `AudioEncoder` module (conv stem +
+      transformer + projection). Currently ~4.0M params (target 5-15M,
+      can be scaled up later if needed).
+- [x] `src/aether/config.py` + `configs/audio_encoder.yaml` — encoder
       hyperparameters
-- [ ] `scripts/smoke_test_audio_encoder.py` — feed real/dummy audio through
-      Qwen3-1.7B (via `inputs_embeds`) and confirm hidden states come out
-      with the expected shape
+- [x] `scripts/smoke_test_audio_encoder.py` — dummy audio → encoder shape
+      check passes: `(2, 61, 2048)`. Run with `--with-qwen` to also load
+      Qwen3-1.7B for real (downloads weights, not run yet)
 
 ## Stage 2 — Dataset: hidden states → target audio
 
