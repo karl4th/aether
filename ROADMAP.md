@@ -35,18 +35,32 @@ Qwen's `hidden_size`. English-only for now.
 
 ## Stage 2 — Dataset: hidden states → target audio
 
-Build a training dataset of paired examples: Qwen's real internal hidden
-state for a given input, and the audio that should be produced from it.
+Build a training dataset of ~1000-2000 paired examples: Qwen's real
+internal hidden state for a sentence, and the audio that sentence should
+produce.
 
-- [ ] Run real audio through Stage 1's encoder + Qwen3-1.7B to collect
-      actual hidden states (not synthetic/dummy ones)
-- [ ] Pair each hidden state with its target audio
-- [ ] **Open question to settle before building this:** what counts as
-      "target audio" for a given hidden state — the same audio reconstructed
-      (autoencoder-style), or a separate response audio (real voice-to-voice
-      pairs)? This decides what raw data we need to collect/use.
-- [ ] Store pairs in a dataset format usable for training (e.g. on-disk
-      tensors/shards of hidden states + matching audio)
+Method:
+1. Take ~1000-2000 English sentences from an existing text corpus
+   (`wikitext-2-raw-v1` via HF `datasets`, sentence-split, filtered to
+   natural spoken length, deduped, sampled).
+2. Run each sentence through **Piper** (local TTS) to synthesize the
+   target audio.
+3. Run the same sentence text through Qwen3-1.7B as normal text input and
+   capture the **full per-token hidden state sequence of the last layer**
+   (`(seq_len, hidden_size)`) via `output_hidden_states=True`.
+4. Store each pair (hidden states tensor + audio file) on disk with a
+   manifest linking them by sentence id.
+
+This does not depend on Stage 1's audio encoder — it uses Qwen in its
+normal text mode to get hidden states, and Piper to get target audio.
+
+- [ ] `scripts/build_sentences.py` — pull/filter/sample sentences from
+      `wikitext-2-raw-v1`
+- [ ] `scripts/synthesize_tts.py` — Piper: sentence → target audio (.wav)
+- [ ] `scripts/extract_hidden_states.py` — Qwen3-1.7B: sentence text →
+      last-layer hidden state sequence (.pt)
+- [ ] `data/dataset/manifest.jsonl` (or similar) tying sentence id → audio
+      path → hidden state path
 
 ## Stage 3 — Train and verify
 
