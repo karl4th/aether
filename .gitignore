@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.Python
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data and model weights (heavy files — not in git)
+data/
+checkpoints/
+weights/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.bin
+*.wav
+*.flac
+*.mp3
+
+# HuggingFace / torch cache
+.cache/
+hf_cache/
+
+# Logs and experiments
+runs/
+logs/
+wandb/
+*.log
+
+# Env vars / secrets
+.env
+.env.*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
