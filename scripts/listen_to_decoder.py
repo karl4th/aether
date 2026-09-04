@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from aether.audio.vocoder import mel_to_waveform
 from aether.config import DecoderConfig, TargetMelConfig
+from aether.decoder.dataset import build_target_mel_fn
 from aether.decoder.model import HiddenStateToMelDecoder
 
 ROOT = Path(__file__).parent.parent
@@ -74,19 +75,52 @@ def main():
     parser.add_argument("--checkpoint", default=str(DEFAULT_CHECKPOINT))
     parser.add_argument("--griffin-lim-iters", type=int, default=32)
     parser.add_argument("--out", default=None, help="Output wav path")
+    parser.add_argument(
+        "--vocoder-only",
+        action="store_true",
+        help=(
+            "Skip the decoder entirely: round-trip the real target mel "
+            "(from the actual Piper wav) through Griffin-Lim. Requires "
+            "--id. Use this to check the vocoder's ceiling quality, "
+            "independent of how well the decoder is trained."
+        ),
+    )
     args = parser.parse_args()
 
     if not args.id and not args.text:
         args.id = "00000"
     if args.id and args.text:
         raise ValueError("Pass either --id or --text, not both.")
+    if args.vocoder_only and not args.id:
+        raise ValueError("--vocoder-only requires --id (needs a real target wav).")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
-    decoder_config = DecoderConfig.from_yaml(str(DECODER_CONFIG_PATH))
     mel_config = TargetMelConfig.from_yaml(str(TARGET_MEL_CONFIG_PATH))
 
+    if args.vocoder_only:
+        import soundfile as sf_read
+
+        text = get_sentence_text(args.id)
+        print(f"Text: {text!r}")
+        audio_np, sr = sf_read.read(
+            str(DATASET_DIR / "audio" / f"{args.id}.wav"), dtype="float32"
+        )
+        assert sr == mel_config.sample_rate
+        waveform_in = torch.from_numpy(audio_np).unsqueeze(0)
+        target_mel = build_target_mel_fn(mel_config)(waveform_in)[0].transpose(0, 1)
+        print(f"Target mel shape: {tuple(target_mel.shape)}")
+
+        waveform = mel_to_waveform(target_mel, mel_config, n_iter=args.griffin_lim_iters)
+        out_path = Path(args.out) if args.out else OUTPUT_DIR / f"{args.id}_vocoder_ceiling.wav"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        sf.write(str(out_path), waveform.numpy(), mel_config.sample_rate)
+        print(f"Saved: {out_path}")
+        print(f"Original audio for comparison: {DATASET_DIR / 'audio' / f'{args.id}.wav'}")
+        return
+
+    decoder_config = DecoderConfig.from_yaml(str(DECODER_CONFIG_PATH))
     decoder = HiddenStateToMelDecoder(decoder_config).to(device)
     decoder.load_state_dict(torch.load(args.checkpoint, map_location=device))
     decoder.eval()
