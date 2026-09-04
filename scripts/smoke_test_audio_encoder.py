@@ -56,7 +56,9 @@ def run_with_qwen(config: AudioEncoderConfig, embeddings: torch.Tensor) -> None:
     from transformers import AutoModelForCausalLM
 
     print(f"Loading {QWEN_MODEL_NAME} (this downloads weights on first run)...")
-    model = AutoModelForCausalLM.from_pretrained(QWEN_MODEL_NAME)
+    # Load in float32: the checkpoint's native bfloat16 doesn't match our
+    # encoder's float32 output, and bf16 matmul is unreliable on CPU anyway.
+    model = AutoModelForCausalLM.from_pretrained(QWEN_MODEL_NAME, dtype=torch.float32)
     model.eval()
 
     with torch.no_grad():
